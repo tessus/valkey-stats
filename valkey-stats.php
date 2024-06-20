@@ -849,8 +849,24 @@ function changeFlushButtons(status) {
 	}
 }
 
+function migrateStorage() {
+	if (localStorage.getItem('redisInfoDetails') != null && localStorage.getItem('vkInfoDetails') == null) {
+		localStorage.setItem('vkInfoDetails', localStorage.getItem('redisInfoDetails'));
+		localStorage.removeItem('redisInfoDetails');
+	}
+	if (localStorage.getItem('redisInfoFlushAsync') != null && localStorage.getItem('vkInfoFlushAsync') == null) {
+		localStorage.setItem('vkInfoFlushAsync', localStorage.getItem('redisInfoFlushAsync'));
+		localStorage.removeItem('redisInfoFlushAsync');
+	}
+	if (localStorage.getItem('redisInfoPlayDelay') != null && localStorage.getItem('vkInfoPlayDelay') == null) {
+		localStorage.setItem('vkInfoPlayDelay', localStorage.getItem('redisInfoPlayDelay'));
+		localStorage.removeItem('redisInfoPlayDelay');
+	}
+}
+
 function initVkInfo() {
 	if (!ERROR) {
+		migrateStorage();
 		if (localStorage.getItem('vkInfoDetails') === 'true') document.getElementById('allinfo').style.display = 'inline-block';
 		if (localStorage.getItem('vkInfoFlushAsync') === 'true') {
 			changeFlushButtons(true);
