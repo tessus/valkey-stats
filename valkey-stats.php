@@ -78,7 +78,7 @@ if (isset($command[$serverName]['INFO']) && !is_null($command[$serverName]['INFO
 	$INFO = $command[$serverName]['INFO'];
 }
 
-// Talk to Redis server
+// Talk to server
 $error = null;
 
 $fp = @fsockopen($servers[$server][1], $servers[$server][2], $errno, $errstr, 30);
@@ -93,7 +93,7 @@ if (!$fp)
 }
 else
 {
-	$redisCommand = '';
+	$vkCommand = '';
 
 	isset($servers[$server][3]) ? $pwdEntry = $servers[$server][3] : $pwdEntry = null;
 	if (!is_null($pwdEntry) && !empty($pwdEntry))
@@ -110,11 +110,11 @@ else
 		{
 			$credentials = $pwdEntry;
 		}
-		$redisCommand = "$AUTH $credentials\r\n";
+		$vkCommand = "$AUTH $credentials\r\n";
 	}
-	$redisCommand .= "$INFO\r\nQUIT\r\n";
+	$vkCommand .= "$INFO\r\nQUIT\r\n";
 
-	fwrite($fp, $redisCommand);
+	fwrite($fp, $vkCommand);
 	while (!feof($fp))
 	{
 		$info = explode(':', trim(fgets($fp)), 2);
@@ -151,7 +151,7 @@ $getDbIndex = function($db)
 {
 	return (int) substr($db, 2);
 };
-$redisDatabases = array_values(array_map($getDbIndex, preg_grep("/^db[0-9]+$/", array_keys($data))));
+$vkDatabases = array_values(array_map($getDbIndex, preg_grep("/^db[0-9]+$/", array_keys($data))));
 
 function time_elapsed($secs)
 {
@@ -585,7 +585,7 @@ window.createPie = createPie;
 </script>
 
 </head>
-<body onload="initRedisInfo()">
+<body onload="initVkInfo()">
 <div class="wrapper">   <!-- Wrapper  -->
 <?php if (CHECK_FOR_UPDATE === true) { ?>
 <button id="checkbutton" style="float: right; margin: 20px 10px 20px -200px;" onclick="checkForUpdate();">Check for update</button>
@@ -722,7 +722,7 @@ else
 
 </div>
 <div class="grid">
-<?php foreach ($redisDatabases as $i) { ?>
+<?php foreach ($vkDatabases as $i) { ?>
 	<div class='box col'>
 		<h2>Keys in store <em><?php echo "db$i" ?></em></h2>
 		<div class="key">
@@ -812,10 +812,10 @@ function toggleDetails() {
 	var state = document.getElementById('allinfo').style.display;
 	if (state == 'inline-block') {
 		document.getElementById('allinfo').style.display = 'none';
-		localStorage.setItem('redisInfoDetails', 'false');
+		localStorage.setItem('vkInfoDetails', 'false');
 	} else {
 		document.getElementById('allinfo').style.display = 'inline-block';
-		localStorage.setItem('redisInfoDetails', 'true');
+		localStorage.setItem('vkInfoDetails', 'true');
 	}
 }
 
@@ -823,10 +823,10 @@ function toggleAsync() {
 	const checked = document.getElementById("checkboxasync").checked;
 
 	if (checked) {
-		localStorage.setItem('redisInfoFlushAsync', 'true');
+		localStorage.setItem('vkInfoFlushAsync', 'true');
 		changeFlushButtons(checked);
 	} else {
-		localStorage.setItem('redisInfoFlushAsync', 'false');
+		localStorage.setItem('vkInfoFlushAsync', 'false');
 		changeFlushButtons(checked);
 	}
 }
@@ -849,18 +849,18 @@ function changeFlushButtons(status) {
 	}
 }
 
-function initRedisInfo() {
+function initVkInfo() {
 	if (!ERROR) {
-		if (localStorage.getItem('redisInfoDetails') === 'true') document.getElementById('allinfo').style.display = 'inline-block';
-		if (localStorage.getItem('redisInfoFlushAsync') === 'true') {
+		if (localStorage.getItem('vkInfoDetails') === 'true') document.getElementById('allinfo').style.display = 'inline-block';
+		if (localStorage.getItem('vkInfoFlushAsync') === 'true') {
 			changeFlushButtons(true);
 			document.getElementById("checkboxasync").checked = true;
 		}
-		if (localStorage.getItem('redisInfoPlayDelay')) {
-			doc_rate.value = localStorage.getItem('redisInfoPlayDelay');
+		if (localStorage.getItem('vkInfoPlayDelay')) {
+			doc_rate.value = localStorage.getItem('vkInfoPlayDelay');
 		}
-		if (sessionStorage.getItem('redisInfoPlay') == '1') { // we are still in auto refesh mode
-			doc_rate.value = localStorage.getItem('redisInfoPlayDelay');
+		if (sessionStorage.getItem('vkInfoPlay') == '1') { // we are still in auto refesh mode
+			doc_rate.value = localStorage.getItem('vkInfoPlayDelay');
 			doc_rate.disabled = true;
 			doc_play.innerHTML = "Pause";
 			play = 1;
@@ -930,7 +930,7 @@ function flushDB(server, db) {
 			return;
 		}
 	}
-	var flushAsync = (localStorage.getItem('redisInfoFlushAsync') === 'true') ? 1 : 0;
+	var flushAsync = (localStorage.getItem('vkInfoFlushAsync') === 'true') ? 1 : 0;
 	const tid = '<?php echo $id; ?>';
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
@@ -977,8 +977,8 @@ function autorefresh() {
 	play = 1;
 	doc_rate.disabled = true;
 	doc_play.innerHTML = "Pause";
-	localStorage.setItem('redisInfoPlayDelay', delay);
-	sessionStorage.setItem('redisInfoPlay', play);
+	localStorage.setItem('vkInfoPlayDelay', delay);
+	sessionStorage.setItem('vkInfoPlay', play);
 	setTimeout("callback()", delay * 1000);
 }
 
@@ -988,7 +988,7 @@ function playpause() {
 		play = 0;
 		doc_play.innerHTML = "Play";
 		doc_rate.disabled = false;
-		sessionStorage.setItem('redisInfoPlay', play);
+		sessionStorage.setItem('vkInfoPlay', play);
 	} else {
 		autorefresh();
 	}
