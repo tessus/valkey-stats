@@ -55,7 +55,7 @@ if (isset($command[$serverName]['AUTH']) && !is_null($command[$serverName]['AUTH
 	$AUTH = $command[$serverName]['AUTH'];
 }
 
-// Talk to Redis server
+// Talk to server
 $error = null;
 
 $fp = @fsockopen($servers[$server][1], $servers[$server][2], $errno, $errstr, 30);
@@ -68,7 +68,7 @@ if (!$fp)
 }
 else
 {
-	$redisCommand = '';
+	$vkCommand = '';
 	$ASYNC        = '';
 
 	isset($servers[$server][3]) ? $pwdEntry = $servers[$server][3] : $pwdEntry = null;
@@ -86,7 +86,7 @@ else
 		{
 			$credentials = $pwdEntry;
 		}
-		$redisCommand = "$AUTH $credentials\r\n";
+		$vkCommand = "$AUTH $credentials\r\n";
 	}
 	if ($async) // we want async flush
 	{
@@ -94,14 +94,14 @@ else
 	}
 	if ($db != -1) // one specific database
 	{
-		$redisCommand .= "SELECT $db\r\n$FLUSHDB$ASYNC\r\nQUIT\r\n";
+		$vkCommand .= "SELECT $db\r\n$FLUSHDB$ASYNC\r\nQUIT\r\n";
 	}
 	else // entire instance
 	{
-		$redisCommand .= "$FLUSHALL$ASYNC\r\nQUIT\r\n";
+		$vkCommand .= "$FLUSHALL$ASYNC\r\nQUIT\r\n";
 	}
 
-	fwrite($fp, $redisCommand);
+	fwrite($fp, $vkCommand);
 	while (!feof($fp))
 	{
 		$info[] = trim(fgets($fp));
@@ -118,7 +118,7 @@ else
 {
 	if (DEBUG === true)
 	{
-		var_dump($redisCommand);
+		var_dump($vkCommand);
 		var_dump($info);
 	}
 	foreach ($info as $v)
