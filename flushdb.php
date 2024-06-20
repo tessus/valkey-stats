@@ -81,6 +81,7 @@ else
 {
 	$vkCommand = '';
 	$ASYNC     = '';
+	$numCmds   = 0;
 
 	isset($servers[$server][3]) ? $pwdEntry = $servers[$server][3] : $pwdEntry = null;
 	if (!is_null($pwdEntry) && !empty($pwdEntry))
@@ -98,6 +99,7 @@ else
 			$credentials = $pwdEntry;
 		}
 		$vkCommand = "$AUTH $credentials\r\n";
+		$numCmds++;
 	}
 	if ($async) // we want async flush
 	{
@@ -106,10 +108,12 @@ else
 	if ($db != -1) // one specific database
 	{
 		$vkCommand .= "SELECT $db\r\n$FLUSHDB$ASYNC\r\nQUIT\r\n";
+		$numCmds += 3;
 	}
 	else // entire instance
 	{
 		$vkCommand .= "$FLUSHALL$ASYNC\r\nQUIT\r\n";
+		$numCmds += 2;
 	}
 
 	fwrite($fp, $vkCommand);
@@ -120,21 +124,15 @@ else
 	fclose($fp);
 }
 
-if (array_unique($info) === array('+OK'))
+for ($i = 0; $i < $numCmds; $i++)
 {
-	$_SESSION['id'] = '';
-	echo "Success";
-}
-else
-{
-	if (DEBUG === true)
+	if ($info[$i] != '+OK')
 	{
 		debug($vkCommand);
 		debug($info);
-	}
-	foreach ($info as $v)
-	{
-		if ($v != '+OK')
-			die($v);
+		die($info[$i]);
 	}
 }
+
+$_SESSION['id'] = '';
+echo "Success";
