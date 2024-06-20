@@ -191,7 +191,7 @@ function debug($var, $pre = true)
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8">
 <title>Valkey Stats</title>
 <style>
 html {
@@ -717,7 +717,7 @@ else
 <div class='box col'>
 	<h2>Persistence</h2>
 	<p class="details">Changes since last save: <?php echo number_format($data['rdb_changes_since_last_save']) ?></p>
-	<p class="details">Last saved<br /><?php echo ($data) ? time_elapsed(time() - $data['rdb_last_save_time']) : '0' ?> ago.</p>
+	<p class="details">Last saved<br><?php echo ($data) ? time_elapsed(time() - $data['rdb_last_save_time']) : '0' ?> ago.</p>
 </div>
 
 </div>
