@@ -55,6 +55,17 @@ if (isset($command[$serverName]['AUTH']) && !is_null($command[$serverName]['AUTH
 	$AUTH = $command[$serverName]['AUTH'];
 }
 
+// Functions
+function debug($var, $pre = true)
+{
+	if (DEBUG)
+	{
+		if ($pre) echo "<pre>".PHP_EOL;
+		var_dump($var);
+		if ($pre) echo "</pre>".PHP_EOL;
+	}
+}
+
 // Talk to server
 $error = null;
 
@@ -69,7 +80,7 @@ if (!$fp)
 else
 {
 	$vkCommand = '';
-	$ASYNC        = '';
+	$ASYNC     = '';
 
 	isset($servers[$server][3]) ? $pwdEntry = $servers[$server][3] : $pwdEntry = null;
 	if (!is_null($pwdEntry) && !empty($pwdEntry))
@@ -118,8 +129,8 @@ else
 {
 	if (DEBUG === true)
 	{
-		var_dump($vkCommand);
-		var_dump($info);
+		debug($vkCommand);
+		debug($info);
 	}
 	foreach ($info as $v)
 	{
