@@ -940,7 +940,7 @@ function flushDB(server, db) {
 			return;
 		}
 	}
-	if (CONFIRM_FLUSHDB) {
+	if ((db != -1) && CONFIRM_FLUSHDB) {
 		if (!confirm("This will flush db"+db+"\n\nAre you sure?")) {
 			return;
 		}
