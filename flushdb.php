@@ -24,7 +24,7 @@ if (!defined('DEBUG'))
 
 // Process GET request
 $server = 0;
-if (isset($_GET['s']) && intval($_GET['s']) < count($servers))
+if (isset($_GET['s']) && intval($_GET['s']) < count($servers) && intval($_GET['s']) >= -1)
 {
 	$server = intval($_GET['s']);
 }
