@@ -29,7 +29,7 @@ $tls = [
 	'TLS connection with user and password' => [ // must be a server name (first field in server array, name shown in drop-down list)
 		'local_cert' => '/path/to/client.pem',
 		'local_pk'   => '/path/to/clientkey.pem',
-		'cafile'     => '/path/to/cacert.crt'
+		'cafile'     => '/path/to/cacert.crt',
 	]
 ];
 
