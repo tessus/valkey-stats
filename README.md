@@ -4,7 +4,7 @@
 
 - lightweight
 - no PHP valkey/redis module required
-- tls suuport (PHP valkey/redis module required)
+- tls support (PHP valkey/redis module required)
 - connection via IP/hostname/port or socket
 - password support (including Valkey/Redis 6 ACLs)
 - show details
