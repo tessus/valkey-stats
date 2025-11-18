@@ -956,7 +956,7 @@ function initVkInfo() {
 		if (localStorage.getItem('vkInfoPlayDelay')) {
 			doc_rate.value = localStorage.getItem('vkInfoPlayDelay');
 		}
-		if (sessionStorage.getItem('vkInfoPlay') == '1') { // we are still in auto refesh mode
+		if (sessionStorage.getItem('vkInfoPlay') == '1') { // we are still in auto refresh mode
 			doc_rate.value = localStorage.getItem('vkInfoPlayDelay');
 			doc_rate.disabled = true;
 			doc_play.innerHTML = "Pause";
