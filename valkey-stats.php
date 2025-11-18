@@ -28,6 +28,10 @@ if (!defined('DEBUG'))
 {
 	define("DEBUG", false);
 }
+if (!defined('USE_MODULE_IF_LOADED'))
+{
+	define("USE_MODULE_IF_LOADED", true);
+}
 if (!defined('FLUSHDB'))
 {
 	define("FLUSHDB", true);
@@ -65,56 +69,72 @@ if (isset($_GET['s']) && intval($_GET['s']) < count($servers))
 }
 $serverName = $servers[$server][0];
 
-// Command mapping
-$AUTH = 'AUTH';
-if (isset($command[$serverName]['AUTH']) && !is_null($command[$serverName]['AUTH']) && !empty($command[$serverName]['AUTH']))
-{
-	$AUTH = $command[$serverName]['AUTH'];
-}
-$INFO = 'INFO';
-if (isset($command[$serverName]['INFO']) && !is_null($command[$serverName]['INFO']) && !empty($command[$serverName]['INFO']))
-{
-	$INFO = $command[$serverName]['INFO'];
-}
-
-// Talk to server
 $error = null;
-
-$fp = @fsockopen($servers[$server][1], $servers[$server][2], $errno, $errstr, 30);
 
 $data    = [];
 $section = '';
 $details = [];
 
-if (!$fp)
-{
-	$error = $errstr;
-}
-else
-{
-	$vkCommand = '';
+debug($servers[$server][1]);
+debug($servers[$server][2]);
+
+// Talk to server
+if (extension_loaded("redis") && USE_MODULE_IF_LOADED)
+{	// Use PHP extension
+	debug("Redis module is loaded");
+
+	$valkey = new Redis();
+
+	$context = [];
+	// build tls context here
+	if (str_starts_with($servers[$server][1], 'tls://'))
+	{
+		$tls_stream = $tls['default-options'];
+		if (array_key_exists($servers[$server][0], $tls))
+		{
+			$tls_stream = array_replace($tls['default-options'], $tls[$servers[$server][0]]);
+		}
+		$context = [
+			'stream' => $tls_stream
+		];
+	}
+	debug($context);
+
+	try {
+		$rc = $valkey->connect($servers[$server][1], $servers[$server][2], 0, null, 0, 0, $context);
+	} catch (Exception $e) {
+		$error = $e->getMessage();
+		goto extensionEnd;
+	}
+
+	if ($rc === false)
+	{
+		$error = "Cannot connect to database.";
+		goto extensionEnd;
+	}
 
 	isset($servers[$server][3]) ? $pwdEntry = $servers[$server][3] : $pwdEntry = null;
 	if (!is_null($pwdEntry) && !empty($pwdEntry))
 	{
-		if (is_array($pwdEntry))
-		{
-			if (!isset($pwdEntry[1]) || is_null($pwdEntry[1]) || empty($pwdEntry[1]))
-			{
-				$pwdEntry[1] = '0';
-			}
-			$credentials = "$pwdEntry[0] $pwdEntry[1]";
+		try {
+			$valkey->auth($pwdEntry);
+		} catch (Exception $e) {
+			$error = $e->getMessage();
+			goto extensionEnd;
 		}
-		else
-		{
-			$credentials = $pwdEntry;
-		}
-		$vkCommand = "$AUTH $credentials\r\n";
 	}
-	$vkCommand .= "$INFO\r\nQUIT\r\n";
 
-	fwrite($fp, $vkCommand);
-	while (!feof($fp))
+	try {
+		$rawInfo = $valkey->rawCommand("INFO");
+	} catch (Exception $e) {
+		$error = $e->getMessage();
+		goto extensionEnd;
+	}
+
+	$fp = fopen("php://memory", 'r+');
+	fputs($fp, $rawInfo);
+	rewind($fp);
+	while(!feof($fp))
 	{
 		$info = explode(':', trim(fgets($fp)), 2);
 		if (isset($info[0]) && substr($info[0], 0, 2) === '# ')
@@ -127,21 +147,83 @@ else
 			$details[$section][$info[0]] = $info[1];
 		}
 	}
-	$section = '';
 	fclose($fp);
-}
 
-if (!$data && !$error)
-{
-	$error = "No data is available.<br>Maybe a password is required to access the database or the password is wrong.";
-}
+	extensionEnd:
+	//debug($info);
+}	// End Use PHP extension
+else
+{	// Use Raw Socket
+	// Command mapping
+	$AUTH = 'AUTH';
+	if (isset($command[$serverName]['AUTH']) && !is_null($command[$serverName]['AUTH']) && !empty($command[$serverName]['AUTH']))
+	{
+		$AUTH = $command[$serverName]['AUTH'];
+	}
+	$INFO = 'INFO';
+	if (isset($command[$serverName]['INFO']) && !is_null($command[$serverName]['INFO']) && !empty($command[$serverName]['INFO']))
+	{
+		$INFO = $command[$serverName]['INFO'];
+	}
 
-$err = '-ERR unknown command';
-if (is_array($data) && !empty($data) && substr(array_keys($data)[0], 0, strlen($err)) === $err)
-{
-	$error = "Command AUTH or INFO has been renamed on the server.";
-}
+	$fp = @fsockopen($servers[$server][1], $servers[$server][2], $errno, $errstr, 30);
 
+	if (!$fp)
+	{
+		$error = $errstr;
+	}
+	else
+	{
+		$vkCommand = '';
+
+		isset($servers[$server][3]) ? $pwdEntry = $servers[$server][3] : $pwdEntry = null;
+		if (!is_null($pwdEntry) && !empty($pwdEntry))
+		{
+			if (is_array($pwdEntry))
+			{
+				if (!isset($pwdEntry[1]) || is_null($pwdEntry[1]) || empty($pwdEntry[1]))
+				{
+					$pwdEntry[1] = '0';
+				}
+				$credentials = "$pwdEntry[0] $pwdEntry[1]";
+			}
+			else
+			{
+				$credentials = $pwdEntry;
+			}
+			$vkCommand = "$AUTH $credentials\r\n";
+		}
+		$vkCommand .= "$INFO\r\nQUIT\r\n";
+
+		fwrite($fp, $vkCommand);
+		while (!feof($fp))
+		{
+			$info = explode(':', trim(fgets($fp)), 2);
+			if (isset($info[0]) && substr($info[0], 0, 2) === '# ')
+			{
+				$section = substr($info[0], 2);
+			}
+			if (isset($info[1]))
+			{
+				$data[$info[0]]              = $info[1];
+				$details[$section][$info[0]] = $info[1];
+			}
+		}
+		$section = '';
+		fclose($fp);
+	}
+
+	if (!$data && !$error)
+	{
+		$error = "No data is available.<br>Maybe a password is required to access the database or the password is wrong.";
+	}
+
+	$err = '-ERR unknown command';
+	if (is_array($data) && !empty($data) && substr(array_keys($data)[0], 0, strlen($err)) === $err)
+	{
+		$error = "Command AUTH or INFO has been renamed on the server.";
+	}
+}	// End Use Raw Socket
 debug($data);
 debug($details);
 
